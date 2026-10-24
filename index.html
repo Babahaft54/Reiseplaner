@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Reisetasche — Minimalistischer Reisebegleiter</title>
+  
+  <!-- Mobile & PWA Optimierung -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Reisetasche">
+  <meta name="theme-color" content="#0c0c0d">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            neutral: {
+              850: '#1f1f1f',
+              950: '#0c0c0d'
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="h-full bg-neutral-100/60 dark:bg-neutral-950 text-neutral-800 dark:text-neutral-200 transition-colors duration-150 flex flex-col">
+
+  <!-- ========================================================================= -->
+  <!-- 1. HEADER (Kompakt, fixiert)                                              -->
+  <!-- ========================================================================= -->
+  <header class="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md border-b border-neutral-200/80 dark:border-neutral-800 sticky top-0 z-40 no-print">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+      
+      <!-- Brand & Active Trip Info -->
+      <div class="flex items-center space-x-3 min-w-0">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 flex items-center justify-center font-bold text-sm shadow-xs">
+            <i data-lucide="backpack" class="w-4 h-4"></i>
+          </div>
+          <h1 class="text-sm font-semibold tracking-tight text-neutral-900 dark:text-white hidden sm:block">
+            Reisetasche
+          </h1>
+        </div>
+
+        <span class="text-neutral-300 dark:text-neutral-700 hidden sm:inline">/</span>
+
+        <!-- Active Trip Badge -->
+        <div class="flex items-center space-x-2 min-w-0">
+          <span id="trip-badge" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 truncate max-w-[190px] sm:max-w-none">
+            Spanien · 5 Tage · Wandern
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick Stats & Actions -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- Progress Counter -->
+        <div class="hidden md:flex flex-col items-end">
+          <span id="progress-text" class="text-[11px] font-mono-code text-neutral-500 dark:text-neutral-400">0 von 0 erledigt (0%)</span>
+          <div class="w-24 bg-neutral-200 dark:bg-neutral-800 h-1.5 rounded-full overflow-hidden mt-1">
+            <div id="progress-bar" class="bg-sky-600 dark:bg-sky-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Reise abschließen Button -->
+        <button id="btn-finish-trip" title="Reise abschließen & ins Archiv" class="px-2.5 py-1.5 text-xs font-medium rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-fast flex items-center space-x-1.5">
+          <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-500"></i>
+          <span class="hidden sm:inline">Abschließen</span>
+        </button>
+
+        <!-- Print Action -->
+        <button onclick="window.print()" title="Packliste drucken / PDF" class="p-2 text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-100 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-fast">
+          <i data-lucide="printer" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Dark Mode Toggle -->
+        <button id="theme-toggle" title="Design wechseln" class="p-2 text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-100 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-fast">
+          <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+          <i data-lucide="moon" class="w-4 h-4 block dark:hidden"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- 2. QUICK-GENERATOR BAR (NLP Smart Input)                                  -->
+  <!-- ========================================================================= -->
+  <section class="bg-white dark:bg-neutral-900 border-b border-neutral-200/80 dark:border-neutral-800 no-print py-3 px-4 sm:px-6 shadow-xs">
+    <div class="max-w-4xl mx-auto">
+      <form id="quick-trip-form" class="space-y-2">
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1">
+            <i data-lucide="sparkles" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-sky-500"></i>
+            <input 
+              type="text" 
+              id="quick-input" 
+              placeholder="Reise eingeben (z. B. '5 Tage Spanien wandern', '3 Tage Harz Bikepacking', '4 Tage Berlin')..." 
+              class="w-full pl-9 pr-3 py-1.5 text-xs sm:text-sm bg-neutral-50 dark:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-700/80 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500 text-neutral-800 dark:text-neutral-100"
+            />
+          </div>
+          <button 
+            type="submit" 
+            class="px-3.5 py-1.5 text-xs font-medium rounded-lg bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-white shadow-xs transition-fast flex items-center space-x-1 flex-shrink-0"
+          >
+            <span>Generieren</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <!-- Quick Toggles -->
+        <div class="flex items-center flex-wrap gap-4 text-xs text-neutral-600 dark:text-neutral-400 pt-1">
+          <span class="text-[11px] uppercase tracking-wider font-semibold text-neutral-400 dark:text-neutral-500">Optionen:</span>
+          
+          <label class="flex items-center space-x-1.5 cursor-pointer select-none">
+            <input type="checkbox" id="opt-wash" class="rounded border-neutral-300 dark:border-neutral-700 text-sky-600 focus:ring-0">
+            <span>🧺 Waschen möglich (3x Rotationspuffer)</span>
+          </label>
+
+          <label class="flex items-center space-x-1.5 cursor-pointer select-none">
+            <input type="checkbox" id="opt-cold" class="rounded border-neutral-300 dark:border-neutral-700 text-sky-600 focus:ring-0">
+            <span>❄️ Kalt (Thermowäsche & Jacke)</span>
+          </label>
+
+          <label class="flex items-center space-x-1.5 cursor-pointer select-none">
+            <input type="checkbox" id="opt-swim" class="rounded border-neutral-300 dark:border-neutral-700 text-sky-600 focus:ring-0">
+            <span>🏊 Schwimmen (Badehose)</span>
+          </label>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 3. TAB NAVIGATION (Kompakt & minimalistisch)                              -->
+  <!-- ========================================================================= -->
+  <nav class="bg-white dark:bg-neutral-900 border-b border-neutral-200/80 dark:border-neutral-800 sticky top-14 z-30 no-print">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+      <div class="flex space-x-1 sm:space-x-6 overflow-x-auto no-scrollbar py-1">
+        
+        <button data-tab="packlist" class="tab-btn py-2.5 px-2 border-b-2 border-neutral-900 text-neutral-900 dark:border-white dark:text-white font-semibold text-xs sm:text-sm flex items-center space-x-1.5 whitespace-nowrap transition-fast">
+          <i data-lucide="check-square" class="w-4 h-4"></i>
+          <span>Packliste</span>
+        </button>
+
+        <button data-tab="checks" class="tab-btn py-2.5 px-2 border-b-2 border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 font-medium text-xs sm:text-sm flex items-center space-x-1.5 whitespace-nowrap transition-fast">
+          <i data-lucide="list-checks" class="w-4 h-4"></i>
+          <span>Checks & Routinen</span>
+        </button>
+
+        <button data-tab="booking" class="tab-btn py-2.5 px-2 border-b-2 border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 font-medium text-xs sm:text-sm flex items-center space-x-1.5 whitespace-nowrap transition-fast">
+          <i data-lucide="ticket" class="w-4 h-4"></i>
+          <span>Reisedaten & PNR</span>
+        </button>
+
+        <button data-tab="doorcheck" class="tab-btn py-2.5 px-2 border-b-2 border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 font-medium text-xs sm:text-sm flex items-center space-x-1.5 whitespace-nowrap transition-fast">
+          <i data-lucide="door-closed" class="w-4 h-4"></i>
+          <span>10-Min Tür-Check</span>
+        </button>
+
+        <button data-tab="weather" class="tab-btn py-2.5 px-2 border-b-2 border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 font-medium text-xs sm:text-sm flex items-center space-x-1.5 whitespace-nowrap transition-fast">
+          <i data-lucide="cloud-sun" class="w-4 h-4"></i>
+          <span>Wetter & Info</span>
+        </button>
+
+        <button data-tab="archive" class="tab-btn py-2.5 px-2 border-b-2 border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 font-medium text-xs sm:text-sm flex items-center space-x-1.5 whitespace-nowrap transition-fast">
+          <i data-lucide="archive" class="w-4 h-4"></i>
+          <span>Jahresarchiv</span>
+        </button>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- ========================================================================= -->
+  <!-- 4. HAUPT-CONTENT CONTAINER                                               -->
+  <!-- ========================================================================= -->
+  <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 space-y-5">
+
+    <!-- Active Trip Headline & Quick Weather Preview -->
+    <div class="flex items-center justify-between pb-1 border-b border-neutral-200/60 dark:border-neutral-800">
+      <div>
+        <h2 id="active-trip-title" class="text-lg sm:text-xl font-bold tracking-tight text-neutral-900 dark:text-white">
+          5 Tage Spanien Wandern
+        </h2>
+        <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+          Minimalistisches Setup · Berechnet nach deinem persönlichen Inventar
+        </p>
+      </div>
+
+      <!-- Quick Weather Indicator Pill -->
+      <button onclick="App.switchTab('weather')" id="quick-weather-pill" class="hidden sm:inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-sky-50 dark:bg-sky-950/50 border border-sky-200/60 dark:border-sky-800 text-sky-800 dark:text-sky-300 text-xs font-mono-code transition-fast hover:border-sky-400">
+        <i data-lucide="sun" class="w-3.5 h-3.5 text-amber-500"></i>
+        <span id="quick-weather-text">Wetter laden...</span>
+      </button>
+    </div>
+
+    <!-- --------------------------------------------------------------------- -->
+    <!-- TAB 1: PACKLISTE & VOR-ORT                                            -->
+    <!-- --------------------------------------------------------------------- -->
+    <div id="pane-packlist" class="tab-pane space-y-4">
+      
+      <!-- Dynamic Weather Pack Advice Banner (wenn Regen oder Kälte droht) -->
+      <div id="weather-pack-alert" class="hidden p-3 rounded-xl border text-xs flex items-center justify-between">
+        <div class="flex items-center space-x-2.5">
+          <i id="weather-alert-icon" data-lucide="cloud-rain" class="w-4 h-4 flex-shrink-0"></i>
+          <span id="weather-alert-text">Pack-Tipp</span>
+        </div>
+      </div>
+
+      <!-- Sub-Tabs: Im Gepäck / Am Körper vs. Vor-Ort-Besorgungen -->
+      <div class="flex items-center justify-between flex-wrap gap-2 no-print">
+        <div class="inline-flex p-1 bg-neutral-200/70 dark:bg-neutral-850 rounded-lg text-xs">
+          <button data-subtab="items" class="subtab-btn px-3 py-1.5 rounded-md bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white font-medium shadow-xs transition-fast flex items-center space-x-1.5">
+            <i data-lucide="package" class="w-3.5 h-3.5"></i>
+            <span>Gepäck & Kleidung</span>
+          </button>
+          <button data-subtab="shopping" class="subtab-btn px-3 py-1.5 rounded-md text-neutral-500 dark:text-neutral-400 transition-fast flex items-center space-x-1.5">
+            <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i>
+            <span>Vor-Ort-Besorgungen</span>
+            <span id="shopping-badge-count" class="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300">0</span>
+          </button>
+        </div>
+
+        <!-- Filter Pill Buttons (Alle, Offen, Am Körper, Gepackt) -->
+        <div class="inline-flex space-x-1 text-xs">
+          <button data-filter="all" class="filter-btn px-2.5 py-1 rounded-md bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 font-medium transition-fast">
+            Alle
+          </button>
+          <button data-filter="open" class="filter-btn px-2.5 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-fast">
+            Noch offen
+          </button>
+          <button data-filter="worn" class="filter-btn px-2.5 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-fast flex items-center space-x-1">
+            <i data-lucide="shirt" class="w-3 h-3 text-amber-500"></i>
+            <span>Am Körper</span>
+          </button>
+          <button data-filter="packed" class="filter-btn px-2.5 py-1 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-fast">
+            Gepackt
+          </button>
+        </div>
+      </div>
+
+      <!-- VIEW 1: Gepäck & Am Körper Items -->
+      <div id="view-pack-items" class="space-y-4">
+        <!-- Dynamische Kategorien -->
+        <div id="packlist-items-container"></div>
+
+        <!-- Inline Gegenstand Hinzufügen -->
+        <form id="add-item-form" class="mt-4 p-3 bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 rounded-xl flex items-center gap-2 no-print shadow-xs">
+          <input 
+            type="text" 
+            id="add-item-input" 
+            placeholder="Neuen Gegenstand hinzufügen..." 
+            class="flex-1 text-xs sm:text-sm bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-sky-500 text-neutral-800 dark:text-neutral-100"
+          />
+          <select 
+            id="add-item-category" 
+            class="text-xs bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg px-2.5 py-1.5 focus:outline-none text-neutral-700 dark:text-neutral-300"
+          >
+            <option value="Essentiell">Essentiell</option>
+            <option value="Dokumente">Dokumente</option>
+            <option value="Kleidung">Kleidung</option>
+            <option value="Hygiene">Hygiene</option>
+            <option value="Elektronik">Elektronik</option>
+            <option value="Verpflegung">Verpflegung</option>
+            <option value="Outdoor Hygiene">Outdoor Hygiene</option>
+            <option value="Übernachtung">Übernachtung</option>
+            <option value="Camping & Werkzeug">Camping & Werkzeug</option>
+            <option value="Fahrrad / Bikepacking">Fahrrad / Bikepacking</option>
+            <option value="Motorrad">Motorrad</option>
+            <option value="Sonstiges" selected>Sonstiges</option>
+          </select>
+          <button 
+            type="submit" 
+            class="px-3 py-1.5 text-xs font-medium rounded-lg bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 transition-fast"
+          >
+            Hinzufügen
+          </button>
+        </form>
+      </div>
+
+      <!-- VIEW 2: Vor-Ort-Besorgungen (Shopping-Tab) -->
+      <div id="view-pack-shopping" class="hidden space-y-4">
+        <div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-800 dark:text-amber-300 flex items-start space-x-2">
+          <i data-lucide="info" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
+          <span>Dinge, die du nicht im Flugzeug/Zug mitnehmen kannst oder erst direkt am Zielort kaufst (z. B. Gaskartuschen fürs Camping, Wasserkanister, frischer Proviant).</span>
+        </div>
+
+        <div id="shopping-items-container"></div>
+
+        <!-- Inline Vor-Ort Item Hinzufügen -->
+        <form id="add-shop-form" class="mt-4 p-3 bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 rounded-xl flex items-center gap-2 no-print shadow-xs">
+          <input 
+            type="text" 
+            id="add-shop-input" 
+            placeholder="z. B. 230g Schraub-Gaskartusche oder 5L Wasser..." 
+            class="flex-1 text-xs sm:text-sm bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-sky-500 text-neutral-800 dark:text-neutral-100"
+          />
+          <button 
+            type="submit" 
+            class="px-3 py-1.5 text-xs font-medium rounded-lg bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 transition-fast"
+          >
+            Auf Liste setzen
+          </button>
+        </form>
+      </div>
+
+    </div>
+
+    <!-- --------------------------------------------------------------------- -->
+    <!-- TAB 2: PRE-TRIP CHECKS & ROUTINEN                                     -->
+    <!-- --------------------------------------------------------------------- -->
+    <div id="pane-checks" class="tab-pane hidden space-y-4">
+      <div class="p-4 bg-sky-50 dark:bg-sky-950/30 border border-sky-200/60 dark:border-sky-900/50 rounded-xl text-xs text-sky-800 dark:text-sky-300 flex items-start space-x-3">
+        <i data-lucide="list-checks" class="w-5 h-5 flex-shrink-0 text-sky-600 dark:text-sky-400"></i>
+        <div>
+          <p class="font-semibold mb-0.5">Deine persönlichen Routinen vor Abreise:</p>
+          <p class="opacity-90">Präzise Vorbereitungen für Wandern & Fahrrad (Carbloading, DIY-Wasser 1:1 Apfelsaft + Salz, 4 bar / 5 bar Reifendruck, OsmAnd-Import).</p>
+        </div>
+      </div>
+
+      <div id="checks-container"></div>
+    </div>
+
+    <!-- --------------------------------------------------------------------- -->
+    <!-- TAB 3: REISEDATEN & PNR-HUB                                           -->
+    <!-- --------------------------------------------------------------------- -->
+    <div id="pane-booking" class="tab-pane hidden space-y-4">
+      
+      <!-- PNR Hero Box -->
+      <div class="p-5 bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 rounded-xl shadow-xs">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs uppercase font-semibold tracking-wider text-neutral-500 dark:text-neutral-400">
+            Buchungscode / PNR
+          </span>
+          <button id="copy-pnr-btn" class="px-2.5 py-1 text-xs font-medium rounded-md bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 text-neutral-700 dark:text-neutral-300 transition-fast flex items-center space-x-1">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span>Kopieren</span>
+          </button>
+        </div>
+        <div id="pnr-display" class="font-mono-code text-3xl font-extrabold tracking-wider text-neutral-900 dark:text-white">
+          XR94KL
+        </div>
+        <p class="text-xs text-neutral-400 mt-1">Für schnellen Online-Checkin oder Airline-App</p>
+      </div>
+
+      <!-- Reisedetails & Flugzeiten -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Verbindung -->
+        <div class="p-4 bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 rounded-xl">
+          <div class="flex items-center space-x-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2">
+            <i data-lucide="plane" class="w-4 h-4 text-sky-500"></i>
+            <span>Verbindung & Zeiten</span>
+          </div>
+          <p id="booking-flight-details" class="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+            Hinflug: 08:45 Uhr -> 11:20 Uhr Madrid (MAD)
+          </p>
+          <p id="booking-notes" class="text-xs text-neutral-400 mt-2">
+            Handgepäck 8kg, Maße 55x40x20
+          </p>
+        </div>
+
+        <!-- Offline Screenshot / Bordkarte Ablage -->
+        <div class="p-4 bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 rounded-xl flex flex-col justify-between">
+          <div>
+            <div class="flex items-center space-x-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2">
+              <i data-lucide="image" class="w-4 h-4 text-purple-500"></i>
+              <span>Bordkarte / Ticket Screenshot</span>
+            </div>
+            <p class="text-xs text-neutral-400">
+              Bilddatei offline speichern oder per Screenshot hochladen (auch ohne Internet immer verfügbar).
+            </p>
+          </div>
+
+          <div id="screenshot-preview-container" class="mt-3">
+            <!-- Wird dynamisch befüllt (Vorschau oder Upload-Button) -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Smart-Import aus Buchungsmail -->
+      <div class="p-4 bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 rounded-xl shadow-xs">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="mail" class="w-4 h-4 text-sky-500"></i>
+            <span class="text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-300">
+              Smart-Import aus Bestätigungs-Mail
+            </span>
+          </div>
+        </div>
+        <p class="text-xs text-neutral-400 mb-2">
+          Kopiere den Text deiner Buchungsbestätigung (z. B. Lufthansa, Ryanair, DB) hier rein. PNR, Flugnummer und Zeiten werden automatisch extrahiert.
+        </p>
+        <textarea 
+          id="mail-parser-input" 
+          rows="3" 
+          placeholder="Buchungsmail-Text hier einfügen..." 
+          class="w-full p-2.5 text-xs bg-neutral-50 dark:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500 font-mono-code text-neutral-800 dark:text-neutral-200"
+        ></textarea>
+        <div class="mt-2 flex justify-end">
+          <button 
+            id="btn-parse-mail" 
+            class="px-3 py-1.5 text-xs font-medium rounded-lg bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 transition-fast flex items-center space-x-1.5"
+          >
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            <span>Daten extrahieren</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- --------------------------------------------------------------------- -->
+    <!-- TAB 4: 10-MINUTEN TÜR-CHECK                                            -->
+    <!-- --------------------------------------------------------------------- -->
+    <div id="pane-doorcheck" class="tab-pane hidden space-y-4">
+      <div class="p-5 bg-neutral-900 text-white dark:bg-neutral-900 dark:border dark:border-neutral-800 rounded-2xl shadow-md">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <h3 class="text-base font-bold tracking-tight">10-Minuten Tür-Check (Launchpad)</h3>
+          </div>
+          <span class="text-xs font-mono-code text-neutral-400">Finale Abreise</span>
+        </div>
+        <p class="text-xs text-neutral-300">
+          Gehe diese essentiellen Dinge physisch durch, bevor die Haustür ins Schloss fällt.
+        </p>
+      </div>
+
+      <!-- Tür-Check Checkboxen -->
+      <div id="doorcheck-container" class="space-y-2"></div>
+
+      <!-- Launchpad Status Banner -->
+      <div id="doorcheck-status-banner" class="p-4 rounded-xl border text-center transition-fast hidden">
+        <div class="flex items-center justify-center space-x-2 text-emerald-600 dark:text-emerald-400 font-semibold text-sm">
+          <i data-lucide="check-check" class="w-5 h-5"></i>
+          <span>Alles erledigt! Gute Reise! 🚀</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- --------------------------------------------------------------------- -->
+    <!-- TAB 5: WETTER & ZIELORT                                                -->
+    <!-- --------------------------------------------------------------------- -->
+    <div id="pane-weather" class="tab-pane hidden space-y-4">
+      <div id="weather-content-container">
+        <!-- Live-Wetter-Inhalt wird dynamisch gerendert -->
+        <div class="p-8 text-center text-neutral-400">
+          <i data-lucide="loader-2" class="w-6 h-6 mx-auto animate-spin mb-2"></i>
+          <p class="text-xs">Wetterdaten für Zielort werden abgerufen...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- --------------------------------------------------------------------- -->
+    <!-- TAB 6: JAHRESARCHIV & MINIMALISMUS-REVIEW                             -->
+    <!-- --------------------------------------------------------------------- -->
+    <div id="pane-archive" class="tab-pane hidden space-y-5">
+      <div id="archive-container">
+        <!-- Wird dynamisch mit Jahresstatistiken & Review-Insights gerendert -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: POST-TRIP REVIEW (Was wurde nicht gebraucht?)                      -->
+  <!-- ========================================================================= -->
+  <div id="modal-review" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-2 border-b border-neutral-100 dark:border-neutral-800">
+        <div>
+          <h3 class="text-base font-bold text-neutral-900 dark:text-white">Reise abschließen & Review</h3>
+          <p class="text-xs text-neutral-400 mt-0.5">Minimalismus-Check: Was blieb unbenutzt?</p>
+        </div>
+        <button onclick="App.closeReviewModal()" class="p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-neutral-600 dark:text-neutral-300">
+        Wähle alle Gegenstände aus, die du auf dieser Reise <strong>nicht benötigt</strong> hast. Diese fließen in deine Jahresauswertung ein, um dein Gepäck dauerhaft zu erleichtern:
+      </p>
+
+      <div id="review-items-list" class="max-h-60 overflow-y-auto space-y-1.5 p-1 border border-neutral-200 dark:border-neutral-800 rounded-xl">
+        <!-- Dynamische Checkboxen für gepackte Items -->
+      </div>
+
+      <div>
+        <label class="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+          Notiz zur Reise (optional):
+        </label>
+        <textarea 
+          id="review-notes-input" 
+          rows="2" 
+          placeholder="z. B. 'Route war super, Reifendruck 4/5 bar top, weniger T-Shirts nächstes Mal'..." 
+          class="w-full p-2.5 text-xs bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500 text-neutral-800 dark:text-neutral-200"
+        ></textarea>
+      </div>
+
+      <div class="flex items-center justify-end space-x-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+        <button 
+          onclick="App.closeReviewModal()" 
+          class="px-3 py-1.5 text-xs rounded-lg border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-fast"
+        >
+          Abbrechen
+        </button>
+        <button 
+          onclick="App.saveReviewAndArchive()" 
+          class="px-4 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition-fast flex items-center space-x-1.5"
+        >
+          <i data-lucide="archive" class="w-3.5 h-3.5"></i>
+          <span>Ins Jahresarchiv ablegen</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: VOLLBILD SCREENSHOT / BORDKARTE VIEWER                             -->
+  <!-- ========================================================================= -->
+  <div id="modal-image-viewer" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 hidden" onclick="App.closeImageViewer()">
+    <div class="relative max-w-2xl max-h-[90vh] flex flex-col items-center">
+      <button onclick="App.closeImageViewer()" class="absolute -top-10 right-0 p-1 text-white hover:text-neutral-300">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+      <img id="modal-image-img" src="" alt="Ticket Screenshot" class="max-h-[85vh] max-w-full rounded-xl object-contain shadow-2xl">
+      <p class="text-xs text-neutral-400 mt-2 font-mono-code">Klick zum Schließen</p>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- 5. SCRIPTS                                                                -->
+  <!-- ========================================================================= -->
+  <script src="js/inventory.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/parser.js"></script>
+  <script src="js/weather.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
