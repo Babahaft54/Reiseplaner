@@ -294,8 +294,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
 
-    openImageViewer() {
-      const imgUrl = this.activeTrip?.booking?.screenshotUrl;
+    openImageViewer(customUrl = null) {
+      const imgUrl = customUrl || this.activeTrip?.booking?.screenshotUrl;
       if (!imgUrl) return;
       const modal = document.getElementById('modal-image-viewer');
       const img = document.getElementById('modal-image-img');

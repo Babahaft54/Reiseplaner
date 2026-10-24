@@ -82,6 +82,47 @@ body {
   transition: background-color 0.12s ease, border-color 0.12s ease;
 }
 
+/* ==========================================================================
+   In-App Feedback & Inspector Styles
+   ========================================================================== */
+.feedback-inspector-cursor * {
+  cursor: crosshair !important;
+}
+
+#feedback-inspector-highlight {
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.22);
+  animation: pulse-border 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    outline: 2px dashed #0284c7;
+    outline-offset: 2px;
+  }
+  50% {
+    outline: 2px dashed #38bdf8;
+    outline-offset: 4px;
+  }
+}
+
+@keyframes bounce-subtle {
+  0%, 100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, -4px);
+  }
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s infinite ease-in-out;
+}
+
+/* Feedback Drawer transition */
+#feedback-drawer {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* Print Stylesheet */
 @media print {
   header, nav, .no-print, button, input {
